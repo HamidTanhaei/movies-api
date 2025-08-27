@@ -96,13 +96,29 @@ export class MovieService {
     }
 
     if (quality) {
-      whereConditions.push('quality = ?');
-      queryParams.push(quality);
+      if (Array.isArray(quality)) {
+        if (quality.length > 0) {
+          const placeholders = quality.map(() => '?').join(',');
+          whereConditions.push(`quality IN (${placeholders})`);
+          queryParams.push(...quality);
+        }
+      } else {
+        whereConditions.push('quality = ?');
+        queryParams.push(quality);
+      }
     }
 
     if (genre) {
-      whereConditions.push('genres LIKE ?');
-      queryParams.push(`%${genre}%`);
+      if (Array.isArray(genre)) {
+        if (genre.length > 0) {
+          const genreConditions = genre.map(() => 'genres LIKE ?');
+          whereConditions.push(`(${genreConditions.join(' OR ')})`);
+          genre.forEach(g => queryParams.push(`%${g}%`));
+        }
+      } else {
+        whereConditions.push('genres LIKE ?');
+        queryParams.push(`%${genre}%`);
+      }
     }
 
     if (min_rating !== undefined) {

@@ -58,8 +58,18 @@ export const validateSearchParams = [
   query('imdb_code').optional().isLength({ max: 20 }).withMessage('IMDB code must be less than 20 characters'),
   query('actor').optional().isLength({ max: 255 }).withMessage('Actor search must be less than 255 characters'),
   query('director').optional().isLength({ max: 255 }).withMessage('Director search must be less than 255 characters'),
-  query('quality').optional().isIn(['480p', '720p', '1080p', '2160p', '3D']).withMessage('Quality must be one of: 480p, 720p, 1080p, 2160p, 3D'),
-  query('genre').optional().isLength({ max: 255 }).withMessage('Genre search must be less than 255 characters'),
+  query('quality').optional().custom((value) => {
+    if (Array.isArray(value)) {
+      return value.every(q => ['480p', '720p', '1080p', '2160p', '3D'].includes(q));
+    }
+    return ['480p', '720p', '1080p', '2160p', '3D'].includes(value);
+  }).withMessage('Quality must be one or more of: 480p, 720p, 1080p, 2160p, 3D'),
+  query('genre').optional().custom((value) => {
+    if (Array.isArray(value)) {
+      return value.every(g => typeof g === 'string' && g.length <= 255);
+    }
+    return typeof value === 'string' && value.length <= 255;
+  }).withMessage('Genre search must be less than 255 characters'),
   query('min_rating').optional().isFloat({ min: 0, max: 10 }).withMessage('Min rating must be between 0 and 10'),
   query('max_rating').optional().isFloat({ min: 0, max: 10 }).withMessage('Max rating must be between 0 and 10'),
   query('min_year').optional().isInt({ min: 1900, max: new Date().getFullYear() }).withMessage('Min year must be between 1900 and current year'),

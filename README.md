@@ -99,10 +99,10 @@ Login user
 
 ### Movies
 
-#### GET /api/v1/movies/search
-Search movies with filters
+#### GET /api/v1/movies
+Search and filter movies with multiple criteria simultaneously
 ```
-GET /api/v1/movies/search?title=inception&quality=1080p&min_rating=8&sort_by=rating&sort_order=desc&page=1&limit=20
+GET /api/v1/movies?title=inception&quality=1080p&genre=Action&min_rating=8&sort_by=rating&sort_order=desc&page=1&limit=20
 ```
 
 **Query Parameters:**
@@ -110,8 +110,8 @@ GET /api/v1/movies/search?title=inception&quality=1080p&min_rating=8&sort_by=rat
 - `imdb_code`: Exact IMDb code
 - `actor`: Actor name (partial match)
 - `director`: Director name (partial match)
-- `quality`: Video quality (480p, 720p, 1080p, 2160p, 3D)
-- `genre`: Genre (partial match)
+- `quality`: Video quality or array of qualities (480p, 720p, 1080p, 2160p, 3D)
+- `genre`: Genre or array of genres (partial match)
 - `min_rating`: Minimum rating (0-10)
 - `max_rating`: Maximum rating (0-10)
 - `min_year`: Minimum year
@@ -121,22 +121,16 @@ GET /api/v1/movies/search?title=inception&quality=1080p&min_rating=8&sort_by=rat
 - `page`: Page number (default: 1)
 - `limit`: Items per page (default: 20, max: 100)
 
-#### GET /api/v1/movies/quality/:quality
-Get movies by quality
+**Multiple Values Examples:**
 ```
-GET /api/v1/movies/quality/1080p
-```
+# Multiple qualities
+GET /api/v1/movies?quality=1080p&quality=2160p
 
-#### GET /api/v1/movies/top-rated
-Get top-rated movies
-```
-GET /api/v1/movies/top-rated?limit=10
-```
+# Multiple genres
+GET /api/v1/movies?genre=Action&genre=Sci-Fi
 
-#### GET /api/v1/movies/year/:year
-Get movies by year
-```
-GET /api/v1/movies/year/2023
+# Combined filtering
+GET /api/v1/movies?quality=1080p&genre=Action&genre=Drama&min_rating=7&min_year=2020
 ```
 
 #### GET /api/v1/movies/:id
@@ -274,17 +268,26 @@ CREATE TABLE favorites (
 
 ### Find Action Movies from 2020-2023 with High Rating
 ```
-GET /api/v1/movies/search?genre=Action&min_year=2020&max_year=2023&min_rating=7&sort_by=rating&sort_order=desc
+GET /api/v1/movies?genre=Action&min_year=2020&max_year=2023&min_rating=7&sort_by=rating&sort_order=desc
 ```
 
 ### Find 4K Movies by Director
 ```
-GET /api/v1/movies/search?director=Christopher Nolan&quality=2160p
+GET /api/v1/movies?director=Christopher Nolan&quality=2160p
 ```
 
 ### Find Movies by Actor with Pagination
 ```
-GET /api/v1/movies/search?actor=Leonardo DiCaprio&page=1&limit=10&sort_by=year&sort_order=desc
+GET /api/v1/movies?actor=Leonardo DiCaprio&page=1&limit=10&sort_by=year&sort_order=desc
+```
+
+### Multiple Quality and Genre Filtering
+```
+# Find high-quality Action or Sci-Fi movies
+GET /api/v1/movies?quality=1080p&quality=2160p&genre=Action&genre=Sci-Fi&min_rating=8
+
+# Find recent Drama or Thriller movies in 4K
+GET /api/v1/movies?quality=2160p&genre=Drama&genre=Thriller&min_year=2020&sort_by=rating&sort_order=desc
 ```
 
 ## Development

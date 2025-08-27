@@ -6,15 +6,15 @@ const router = Router();
 
 const getMovieService = () => new MovieService();
 
-router.get('/search', validateSearchParams, async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', validateSearchParams, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const searchParams = {
       title: req.query.title as string,
       imdb_code: req.query.imdb_code as string,
       actor: req.query.actor as string,
       director: req.query.director as string,
-      quality: req.query.quality as string,
-      genre: req.query.genre as string,
+      quality: Array.isArray(req.query.quality) ? req.query.quality as string[] : req.query.quality as string,
+      genre: Array.isArray(req.query.genre) ? req.query.genre as string[] : req.query.genre as string,
       min_rating: req.query.min_rating ? parseFloat(req.query.min_rating as string) : undefined,
       max_rating: req.query.max_rating ? parseFloat(req.query.max_rating as string) : undefined,
       min_year: req.query.min_year ? parseInt(req.query.min_year as string) : undefined,
@@ -36,53 +36,11 @@ router.get('/search', validateSearchParams, async (req: Request, res: Response, 
   }
 });
 
-router.get('/quality/:quality', async (req, res, next) => {
-  try {
-    const { quality } = req.params;
-    const movieService = getMovieService();
-    const movies = await movieService.getMoviesByQuality(quality);
-    res.json({
-      success: true,
-      data: movies
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
-router.get('/top-rated', async (req, res, next) => {
-  try {
-    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
-    const movieService = getMovieService();
-    const movies = await movieService.getTopRatedMovies(limit);
-    res.json({
-      success: true,
-      data: movies
-    });
-  } catch (error) {
-    next(error);
-  }
-});
 
-router.get('/year/:year', async (req, res, next) => {
-  try {
-    const year = parseInt(req.params.year);
-    if (isNaN(year)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid year parameter'
-      });
-    }
-    const movieService = getMovieService();
-    const movies = await movieService.getMoviesByYear(year);
-    res.json({
-      success: true,
-      data: movies
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+
+
+
 
 router.get('/:id', async (req, res, next) => {
   try {

@@ -22,8 +22,8 @@ export interface MovieSearchParams {
   imdb_code?: string;
   actor?: string;
   director?: string;
-  quality?: string;
-  genre?: string;
+  quality?: string | string[];
+  genre?: string | string[];
   min_rating?: number;
   max_rating?: number;
   min_year?: number;
