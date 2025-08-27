@@ -4,17 +4,35 @@ export interface Movie {
   imdb_code?: string;
   year?: number;
   rating?: number;
-  genres?: string;
-  quality?: string;
   download_count?: number;
   like_count?: number;
   rotten_tomatoes_rating?: number;
-  director?: string;
   cast?: string;
   synopsis?: string;
   poster_url?: string;
   created_at?: string;
   updated_at?: string;
+  genres?: Genre[];
+  qualities?: Quality[];
+  directors?: Director[];
+}
+
+export interface Genre {
+  id: number;
+  name: string;
+  created_at?: string;
+}
+
+export interface Quality {
+  id: number;
+  name: string;
+  created_at?: string;
+}
+
+export interface Director {
+  id: number;
+  name: string;
+  created_at?: string;
 }
 
 export interface MovieSearchParams {
@@ -47,12 +65,12 @@ export interface MovieCreateRequest {
   imdb_code?: string;
   year?: number;
   rating?: number;
-  genres?: string;
-  quality?: string;
+  genres?: number[];
+  qualities?: number[];
   download_count?: number;
   like_count?: number;
   rotten_tomatoes_rating?: number;
-  director?: string;
+  directors?: number[];
   cast?: string;
   synopsis?: string;
   poster_url?: string;
@@ -63,12 +81,12 @@ export interface MovieUpdateRequest {
   imdb_code?: string;
   year?: number;
   rating?: number;
-  genres?: string;
-  quality?: string;
+  genres?: number[];
+  qualities?: number[];
   download_count?: number;
   like_count?: number;
   rotten_tomatoes_rating?: number;
-  director?: string;
+  directors?: number[];
   cast?: string;
   synopsis?: string;
   poster_url?: string;

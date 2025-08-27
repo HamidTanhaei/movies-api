@@ -41,17 +41,74 @@ const initializeTables = (): void => {
       imdb_code TEXT UNIQUE,
       year INTEGER,
       rating REAL,
-      genres TEXT,
-      quality TEXT,
       download_count INTEGER DEFAULT 0,
       like_count INTEGER DEFAULT 0,
       rotten_tomatoes_rating REAL,
-      director TEXT,
       cast TEXT,
       synopsis TEXT,
       poster_url TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  const createGenresTable = `
+    CREATE TABLE IF NOT EXISTS genres (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  const createQualitiesTable = `
+    CREATE TABLE IF NOT EXISTS qualities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  const createDirectorsTable = `
+    CREATE TABLE IF NOT EXISTS directors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  const createMovieGenresTable = `
+    CREATE TABLE IF NOT EXISTS movie_genres (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      movie_id INTEGER NOT NULL,
+      genre_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+      FOREIGN KEY (genre_id) REFERENCES genres (id) ON DELETE CASCADE,
+      UNIQUE(movie_id, genre_id)
+    )
+  `;
+
+  const createMovieQualitiesTable = `
+    CREATE TABLE IF NOT EXISTS movie_qualities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      movie_id INTEGER NOT NULL,
+      quality_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+      FOREIGN KEY (quality_id) REFERENCES qualities (id) ON DELETE CASCADE,
+      UNIQUE(movie_id, quality_id)
+    )
+  `;
+
+  const createMovieDirectorsTable = `
+    CREATE TABLE IF NOT EXISTS movie_directors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      movie_id INTEGER NOT NULL,
+      director_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+      FOREIGN KEY (director_id) REFERENCES directors (id) ON DELETE CASCADE,
+      UNIQUE(movie_id, director_id)
     )
   `;
 
@@ -80,11 +137,62 @@ const initializeTables = (): void => {
 
   try {
     db.exec(createMoviesTable);
+    db.exec(createGenresTable);
+    db.exec(createQualitiesTable);
+    db.exec(createDirectorsTable);
+    db.exec(createMovieGenresTable);
+    db.exec(createMovieQualitiesTable);
+    db.exec(createMovieDirectorsTable);
     db.exec(createUsersTable);
     db.exec(createFavoritesTable);
+
+    // Insert default data
+    insertDefaultData();
+
     console.log('✅ Database tables initialized successfully');
   } catch (error) {
     console.error('❌ Failed to initialize database tables:', error);
     throw error;
+  }
+};
+
+const insertDefaultData = (): void => {
+  try {
+    // Insert default genres
+    const defaultGenres = [
+      'Action',
+      'Adventure',
+      'Animation',
+      'Biography',
+      'Comedy',
+      'Crime',
+      'Documentary',
+      'Drama',
+      'Family',
+      'Fantasy',
+      'Film-Noir',
+      'History',
+      'Horror',
+      'Music',
+      'Musical',
+      'Mystery',
+      'Romance',
+      'Sci-Fi',
+      'Sport',
+      'Thriller',
+      'War',
+      'Western',
+    ];
+    const insertGenre = db.prepare('INSERT OR IGNORE INTO genres (name) VALUES (?)');
+    defaultGenres.forEach((genre) => insertGenre.run(genre));
+
+    // Insert default qualities
+    const defaultQualities = ['480p', '720p', '1080p', '2160p', '3D'];
+    const insertQuality = db.prepare('INSERT OR IGNORE INTO qualities (name) VALUES (?)');
+    defaultQualities.forEach((quality) => insertQuality.run(quality));
+
+    console.log('✅ Default data inserted successfully');
+  } catch (error) {
+    console.error('❌ Failed to insert default data:', error);
   }
 };

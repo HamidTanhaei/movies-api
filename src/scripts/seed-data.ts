@@ -6,12 +6,12 @@ const sampleMovies = [
     imdb_code: 'tt1375666',
     year: 2010,
     rating: 8.8,
-    genres: 'Action, Sci-Fi, Thriller',
-    quality: '1080p',
+    genres: ['Action', 'Sci-Fi', 'Thriller'],
+    qualities: ['1080p'],
     download_count: 2500,
     like_count: 1800,
     rotten_tomatoes_rating: 87,
-    director: 'Christopher Nolan',
+    directors: ['Christopher Nolan'],
     cast: 'Leonardo DiCaprio, Joseph Gordon-Levitt, Ellen Page, Ken Watanabe',
     synopsis: 'A thief who steals corporate secrets through dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O.',
     poster_url: 'https://example.com/inception-poster.jpg'
@@ -21,12 +21,12 @@ const sampleMovies = [
     imdb_code: 'tt0468569',
     year: 2008,
     rating: 9.0,
-    genres: 'Action, Crime, Drama',
-    quality: '2160p',
+    genres: ['Action', 'Crime', 'Drama'],
+    qualities: ['2160p'],
     download_count: 3200,
     like_count: 2100,
     rotten_tomatoes_rating: 94,
-    director: 'Christopher Nolan',
+    directors: ['Christopher Nolan'],
     cast: 'Christian Bale, Heath Ledger, Aaron Eckhart, Maggie Gyllenhaal',
     synopsis: 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.',
     poster_url: 'https://example.com/dark-knight-poster.jpg'
@@ -36,12 +36,12 @@ const sampleMovies = [
     imdb_code: 'tt0816692',
     year: 2014,
     rating: 8.6,
-    genres: 'Adventure, Drama, Sci-Fi',
-    quality: '1080p',
+    genres: ['Adventure', 'Drama', 'Sci-Fi'],
+    qualities: ['1080p'],
     download_count: 1800,
     like_count: 1200,
     rotten_tomatoes_rating: 72,
-    director: 'Christopher Nolan',
+    directors: ['Christopher Nolan'],
     cast: 'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Mackenzie Foy',
     synopsis: 'A team of explorers travel through a wormhole in space in an attempt to ensure humanity\'s survival.',
     poster_url: 'https://example.com/interstellar-poster.jpg'
@@ -51,12 +51,12 @@ const sampleMovies = [
     imdb_code: 'tt0110912',
     year: 1994,
     rating: 8.9,
-    genres: 'Crime, Drama',
-    quality: '720p',
+    genres: ['Crime', 'Drama'],
+    qualities: ['720p'],
     download_count: 1500,
     like_count: 900,
     rotten_tomatoes_rating: 92,
-    director: 'Quentin Tarantino',
+    directors: ['Quentin Tarantino'],
     cast: 'John Travolta, Uma Thurman, Samuel L. Jackson, Bruce Willis',
     synopsis: 'The lives of two mob hitmen, a boxer, a gangster and his wife, and a pair of diner bandits intertwine in four tales of violence and redemption.',
     poster_url: 'https://example.com/pulp-fiction-poster.jpg'
@@ -66,12 +66,12 @@ const sampleMovies = [
     imdb_code: 'tt0111161',
     year: 1994,
     rating: 9.3,
-    genres: 'Drama',
-    quality: '1080p',
+    genres: ['Drama'],
+    qualities: ['1080p'],
     download_count: 2800,
     like_count: 1900,
     rotten_tomatoes_rating: 91,
-    director: 'Frank Darabont',
+    directors: ['Frank Darabont'],
     cast: 'Tim Robbins, Morgan Freeman, Bob Gunton, William Sadler',
     synopsis: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.',
     poster_url: 'https://example.com/shawshank-poster.jpg'
@@ -81,12 +81,12 @@ const sampleMovies = [
     imdb_code: 'tt0133093',
     year: 1999,
     rating: 8.8,
-    genres: 'Drama',
-    quality: '720p',
+    genres: ['Drama'],
+    qualities: ['720p'],
     download_count: 1200,
     like_count: 800,
     rotten_tomatoes_rating: 79,
-    director: 'David Fincher',
+    directors: ['David Fincher'],
     cast: 'Brad Pitt, Edward Norton, Helena Bonham Carter, Meat Loaf',
     synopsis: 'An insomniac office worker and a devil-may-care soapmaker form an underground fight club that evolves into something much, much more.',
     poster_url: 'https://example.com/fight-club-poster.jpg'
@@ -96,12 +96,12 @@ const sampleMovies = [
     imdb_code: 'tt0133093',
     year: 1999,
     rating: 8.7,
-    genres: 'Action, Sci-Fi',
-    quality: '1080p',
+    genres: ['Action', 'Sci-Fi'],
+    qualities: ['1080p'],
     download_count: 2200,
     like_count: 1500,
     rotten_tomatoes_rating: 88,
-    director: 'Lana Wachowski, Lilly Wachowski',
+    directors: ['Lana Wachowski', 'Lilly Wachowski'],
     cast: 'Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss, Hugo Weaving',
     synopsis: 'A computer programmer discovers that reality as he knows it is a simulation created by machines, and joins a rebellion to break free.',
     poster_url: 'https://example.com/matrix-poster.jpg'
@@ -111,12 +111,12 @@ const sampleMovies = [
     imdb_code: 'tt0109830',
     year: 1994,
     rating: 8.8,
-    genres: 'Drama, Romance',
-    quality: '720p',
+    genres: ['Drama', 'Romance'],
+    qualities: ['720p'],
     download_count: 1600,
     like_count: 1100,
     rotten_tomatoes_rating: 71,
-    director: 'Robert Zemeckis',
+    directors: ['Robert Zemeckis'],
     cast: 'Tom Hanks, Robin Wright, Gary Sinise, Sally Field',
     synopsis: 'The presidencies of Kennedy and Johnson, the Vietnam War, the Watergate scandal and other historical events unfold from the perspective of an Alabama man with an IQ of 75.',
     poster_url: 'https://example.com/forrest-gump-poster.jpg'
@@ -130,32 +130,75 @@ const seedDatabase = async () => {
 
     console.log('🌱 Starting database seeding...');
 
-    const insertStmt = db.prepare(`
+    const insertMovieStmt = db.prepare(`
       INSERT INTO movies (
-        title, imdb_code, year, rating, genres, quality, 
+        title, imdb_code, year, rating, 
         download_count, like_count, rotten_tomatoes_rating, 
-        director, cast, synopsis, poster_url
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        cast, synopsis, poster_url
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     let insertedCount = 0;
     for (const movie of sampleMovies) {
       try {
-        insertStmt.run(
-          movie.title,
-          movie.imdb_code,
-          movie.year,
-          movie.rating,
-          movie.genres,
-          movie.quality,
-          movie.download_count,
-          movie.like_count,
-          movie.rotten_tomatoes_rating,
-          movie.director,
-          movie.cast,
-          movie.synopsis,
-          movie.poster_url
-        );
+        const transaction = db.transaction(() => {
+          // Insert movie
+          const result = insertMovieStmt.run(
+            movie.title,
+            movie.imdb_code,
+            movie.year,
+            movie.rating,
+            movie.download_count,
+            movie.like_count,
+            movie.rotten_tomatoes_rating,
+            movie.cast,
+            movie.synopsis,
+            movie.poster_url
+          );
+
+          const movieId = result.lastInsertRowid as number;
+
+          // Insert genres
+          if (movie.genres && movie.genres.length > 0) {
+            const insertGenre = db.prepare('INSERT INTO movie_genres (movie_id, genre_id) VALUES (?, ?)');
+            movie.genres.forEach(genreName => {
+              const genre = db.prepare('SELECT id FROM genres WHERE name = ?').get(genreName) as any;
+              if (genre) {
+                insertGenre.run(movieId, genre.id);
+              }
+            });
+          }
+
+          // Insert qualities
+          if (movie.qualities && movie.qualities.length > 0) {
+            const insertQuality = db.prepare('INSERT INTO movie_qualities (movie_id, quality_id) VALUES (?, ?)');
+            movie.qualities.forEach(qualityName => {
+              const quality = db.prepare('SELECT id FROM qualities WHERE name = ?').get(qualityName) as any;
+              if (quality) {
+                insertQuality.run(movieId, quality.id);
+              }
+            });
+          }
+
+          // Insert directors
+          if (movie.directors && movie.directors.length > 0) {
+            const insertDirector = db.prepare('INSERT INTO movie_directors (movie_id, director_id) VALUES (?, ?)');
+            movie.directors.forEach(directorName => {
+              let director = db.prepare('SELECT id FROM directors WHERE name = ?').get(directorName) as any;
+              if (!director) {
+                // Create director if doesn't exist
+                const createDirector = db.prepare('INSERT INTO directors (name) VALUES (?)');
+                const directorResult = createDirector.run(directorName);
+                director = { id: directorResult.lastInsertRowid };
+              }
+              insertDirector.run(movieId, director.id);
+            });
+          }
+
+          return movieId;
+        });
+
+        transaction();
         insertedCount++;
         console.log(`✅ Inserted: ${movie.title}`);
       } catch (error: any) {
