@@ -1,19 +1,30 @@
 # Movie Database API
 
-A comprehensive REST API for managing and searching movies with advanced filtering, sorting, and pagination capabilities.
+A comprehensive REST API for managing and searching movies with advanced filtering, sorting, and pagination capabilities. Features a curated collection of **100 classic and modern films** from around the world.
 
-## Features
+## ✨ Key Features
 
-- **Flexible Search**: Search movies by title, IMDb code, actor, or director
-- **Quality Filtering**: Filter by specific qualities (480p, 720p, 1080p, 2160p, 3D)
-- **Advanced Sorting**: Sort by rating, year, download count, like count, and title
-- **Pagination**: Built-in pagination for large datasets
-- **Rotten Tomatoes Integration**: Optional Rotten Tomatoes ratings
-- **User Authentication**: JWT-based authentication system
-- **SQLite Database**: Lightweight, file-based database
-- **Rate Limiting**: API protection against abuse
-- **Input Validation**: Comprehensive request validation
-- **Error Handling**: Structured error responses
+- **🔍 Flexible Search**: Search movies by title, IMDb code, actor, or director
+- **🎬 Multi-Genre Support**: 22+ genres including Action, Drama, Sci-Fi, Horror, Animation, and more
+- **📺 Quality Filtering**: Filter by video qualities (480p, 720p, 1080p, 2160p, 3D)
+- **🎯 Dynamic Filtering**: Smart filter suggestions based on current selections
+- **📊 Advanced Sorting**: Sort by rating, year, download count, like count, and title
+- **📄 Pagination**: Built-in pagination for large datasets
+- **🍅 Rotten Tomatoes**: Integrated ratings from Rotten Tomatoes
+- **🔐 User Authentication**: JWT-based secure authentication system
+- **💾 SQLite Database**: Lightweight, normalized database with relational integrity
+- **🛡️ Rate Limiting**: Built-in API protection against abuse
+- **✅ Input Validation**: Comprehensive request validation and sanitization
+- **🚨 Error Handling**: Structured error responses with proper HTTP status codes
+
+## 📊 Database Content
+
+- **100 curated movies** spanning from 1957 to 2019
+- **22 genres**: Action, Adventure, Animation, Biography, Comedy, Crime, Documentary, Drama, Family, Fantasy, Film-Noir, History, Horror, Music, Musical, Mystery, Romance, Sci-Fi, Sport, Thriller, War, Western
+- **5 quality levels**: 480p, 720p, 1080p, 2160p, 3D
+- **International cinema**: Films from Hollywood, Asia, Europe, and Latin America
+- **Rating range**: 6.9 to 9.3 IMDb ratings
+- **Diverse directors**: From Kubrick and Hitchcock to Miyazaki and Bong Joon-ho
 
 ## Tech Stack
 
@@ -43,7 +54,7 @@ A comprehensive REST API for managing and searching movies with advanced filteri
 
 ```env
 # Server Configuration
-PORT=3000
+PORT=3001
 NODE_ENV=development
 
 # Database Configuration
@@ -73,6 +84,14 @@ npm run dev
 npm run build
 npm start
 ```
+
+### Database Setup
+```bash
+# Seed the database with 100 curated movies
+npm run seed
+```
+
+**Note**: The database will be automatically created when you first run the application. The seed command populates it with 100 carefully selected movies spanning multiple decades and genres.
 
 ## API Endpoints
 
@@ -133,6 +152,34 @@ GET /api/v1/movies?genre=Action&genre=Sci-Fi
 GET /api/v1/movies?quality=1080p&genre=Action&genre=Drama&min_rating=7&min_year=2020
 ```
 
+#### GET /api/v1/movies/filters
+Get dynamic filter options with smart suggestions
+```
+GET /api/v1/movies/filters
+GET /api/v1/movies/filters?selectedFilters=[{"type":"genre","value":"Action"}]
+```
+
+**Dynamic Filtering Logic:**
+- **No filters**: Returns all available options for all filter types
+- **One filter**: Shows all options for that filter + common options for other filters
+- **Multiple filters**: Shows selected options for previous filters + all options for the last filter
+
+**Query Parameters:**
+- `selectedFilters`: JSON string array of selected filters
+  ```json
+  [
+    {"type": "genre", "value": "Action"},
+    {"type": "quality", "value": "1080p"}
+  ]
+  ```
+
+**Filter Types:**
+- `genre`: Movie genres (Action, Drama, Sci-Fi, etc.)
+- `quality`: Video qualities (480p, 720p, 1080p, 2160p, 3D)
+- `director`: Director names
+- `year`: Release years (grouped by decade)
+- `rating_range`: Rating ranges (e.g., "8.0-8.5", "9.0+")
+
 #### GET /api/v1/movies/:id
 Get movie by ID
 ```
@@ -191,6 +238,8 @@ POST /api/v1/movies/1/like
 
 ## Database Schema
 
+The database uses a **normalized relational structure** for better data integrity and efficient filtering.
+
 ### Movies Table
 ```sql
 CREATE TABLE movies (
@@ -199,17 +248,68 @@ CREATE TABLE movies (
   imdb_code TEXT UNIQUE,
   year INTEGER,
   rating REAL,
-  genres TEXT,
-  quality TEXT,
   download_count INTEGER DEFAULT 0,
   like_count INTEGER DEFAULT 0,
   rotten_tomatoes_rating REAL,
-  director TEXT,
   cast TEXT,
   synopsis TEXT,
   poster_url TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Normalized Reference Tables
+```sql
+-- Genres table
+CREATE TABLE genres (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL
+);
+
+-- Qualities table  
+CREATE TABLE qualities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL
+);
+
+-- Directors table
+CREATE TABLE directors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT UNIQUE NOT NULL
+);
+```
+
+### Relationship Tables (Many-to-Many)
+```sql
+-- Movie-Genre relationships
+CREATE TABLE movie_genres (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  movie_id INTEGER NOT NULL,
+  genre_id INTEGER NOT NULL,
+  FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+  FOREIGN KEY (genre_id) REFERENCES genres (id) ON DELETE CASCADE,
+  UNIQUE(movie_id, genre_id)
+);
+
+-- Movie-Quality relationships
+CREATE TABLE movie_qualities (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  movie_id INTEGER NOT NULL,
+  quality_id INTEGER NOT NULL,
+  FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+  FOREIGN KEY (quality_id) REFERENCES qualities (id) ON DELETE CASCADE,
+  UNIQUE(movie_id, quality_id)
+);
+
+-- Movie-Director relationships
+CREATE TABLE movie_directors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  movie_id INTEGER NOT NULL,
+  director_id INTEGER NOT NULL,
+  FOREIGN KEY (movie_id) REFERENCES movies (id) ON DELETE CASCADE,
+  FOREIGN KEY (director_id) REFERENCES directors (id) ON DELETE CASCADE,
+  UNIQUE(movie_id, director_id)
 );
 ```
 
@@ -290,18 +390,94 @@ GET /api/v1/movies?quality=1080p&quality=2160p&genre=Action&genre=Sci-Fi&min_rat
 GET /api/v1/movies?quality=2160p&genre=Drama&genre=Thriller&min_year=2020&sort_by=rating&sort_order=desc
 ```
 
+## 🎯 Dynamic Filtering Examples
+
+### Get All Available Filters
+```bash
+GET /api/v1/movies/filters
+```
+Returns all available options for genres, qualities, directors, years, and rating ranges.
+
+### Progressive Filtering
+```bash
+# Step 1: Select Action genre
+GET /api/v1/movies/filters?selectedFilters=[{"type":"genre","value":"Action"}]
+
+# Step 2: Add 1080p quality filter  
+GET /api/v1/movies/filters?selectedFilters=[{"type":"genre","value":"Action"},{"type":"quality","value":"1080p"}]
+
+# Step 3: Add Christopher Nolan as director
+GET /api/v1/movies/filters?selectedFilters=[{"type":"genre","value":"Action"},{"type":"quality","value":"1080p"},{"type":"director","value":"Christopher Nolan"}]
+```
+
+**Response Structure:**
+```json
+{
+  "success": true,
+  "data": {
+    "genres": [
+      {"id": 1, "name": "Action", "total": 25, "selected": true},
+      {"id": 2, "name": "Drama", "total": 8, "selected": false}
+    ],
+    "qualities": [
+      {"id": 3, "name": "1080p", "total": 15, "selected": true},
+      {"id": 4, "name": "2160p", "total": 3, "selected": false}
+    ],
+    "directors": [
+      {"id": 5, "name": "Christopher Nolan", "total": 3, "selected": false}
+    ],
+    "years": [
+      {"name": "2010s", "total": 12, "selected": false}
+    ],
+    "rating_ranges": [
+      {"name": "8.0-8.5", "total": 8, "selected": false}
+    ]
+  }
+}
+```
+
 ## Development
 
 ### Project Structure
 ```
 src/
-├── config/          # Database and configuration
-├── middleware/      # Express middleware
+├── config/          # Database configuration and connection
+├── middleware/      # Express middleware (auth, validation, rate limiting)
 ├── routes/          # API route handlers
-├── services/        # Business logic
+├── services/        # Business logic and database operations
+├── scripts/         # Database seeding and utilities
 ├── types/           # TypeScript type definitions
-└── server.ts        # Main server file
+└── server.ts        # Main application server
 ```
+
+## 🎬 Featured Movie Collection
+
+Our curated collection includes iconic films from multiple eras and regions:
+
+### **🏆 Acclaimed Classics**
+- The Shawshank Redemption (9.3★) - Frank Darabont
+- The Godfather (9.2★) - Francis Ford Coppola  
+- Schindler's List (8.9★) - Steven Spielberg
+- Pulp Fiction (8.9★) - Quentin Tarantino
+
+### **🚀 Modern Masterpieces**
+- Parasite (8.5★) - Bong Joon-ho
+- Joker (8.4★) - Todd Phillips
+- 1917 (8.2★) - Sam Mendes
+- Knives Out (7.9★) - Rian Johnson
+
+### **🎌 International Cinema**
+- Spirited Away (8.6★) - Hayao Miyazaki
+- Oldboy (8.4★) - Park Chan-wook
+- City of God (8.6★) - Fernando Meirelles
+- In the Mood for Love (8.1★) - Wong Kar-wai
+
+### **🎭 Genre Diversity**
+- **Action**: Mad Max: Fury Road, John Wick, The Raid
+- **Sci-Fi**: Inception, Blade Runner, Arrival, Ex Machina  
+- **Horror**: The Shining, Get Out, Hereditary, A Quiet Place
+- **Animation**: Coco, Inside Out, Princess Mononoke, WALL-E
+- **Comedy**: The Grand Budapest Hotel, The Big Lebowski, Amélie
 
 ### Adding New Features
 1. Define types in `src/types/`
@@ -326,13 +502,16 @@ npm test
 - **JWT Authentication**: Secure token-based auth
 - **Password Hashing**: Bcrypt with salt rounds
 
-## Performance
+## ⚡ Performance
 
-- **SQLite**: Fast, lightweight database
-- **Prepared Statements**: SQL injection protection
-- **Indexing**: Optimized queries
-- **Pagination**: Efficient data retrieval
-- **Connection Pooling**: Database connection management
+- **SQLite**: Fast, lightweight database with optimized queries
+- **Normalized Schema**: Efficient joins and reduced data redundancy  
+- **Prepared Statements**: SQL injection protection and query optimization
+- **Database Indexing**: Optimized search and filter performance
+- **Efficient Pagination**: Smart data retrieval with limits
+- **Dynamic Filtering**: Intelligent suggestions without unnecessary queries
+- **Transaction Support**: ACID compliance for data integrity
+- **Connection Management**: Optimized database connections
 
 ## License
 
