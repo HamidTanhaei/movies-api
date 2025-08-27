@@ -355,4 +355,215 @@ export class MovieService {
     const stmt = this.db.prepare('UPDATE movies SET like_count = like_count + 1 WHERE id = ?');
     stmt.run(id);
   }
+
+  async getAvailableFilters(selectedFilters: Array<{
+    type: 'genre' | 'quality' | 'director' | 'year' | 'rating_range';
+    values: (string | number)[];
+  }> = []): Promise<{
+    genres: Array<{ id: number; name: string; total: number }>;
+    qualities: Array<{ id: number; name: string; total: number }>;
+    directors: Array<{ id: number; name: string; total: number }>;
+    years: Array<{ year: number; total: number }>;
+    rating_ranges: Array<{ range: string; min: number; max: number; total: number }>;
+  }> {
+    // Build WHERE clause based on selected filters (excluding the last one)
+    let whereConditions: string[] = [];
+    let queryParams: any[] = [];
+    
+    if (selectedFilters.length > 1) {
+      // Apply all filters except the last one to narrow down the dataset
+      for (let i = 0; i < selectedFilters.length - 1; i++) {
+        const filter = selectedFilters[i];
+        this.applyFilterCondition(filter, whereConditions, queryParams);
+      }
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // Get genres with counts (filtered if other filters are applied)
+    const genres = this.db.prepare(`
+      SELECT g.id, g.name, COUNT(DISTINCT mg.movie_id) as total
+      FROM genres g
+      JOIN movie_genres mg ON g.id = mg.genre_id
+      JOIN movies m ON mg.movie_id = m.id
+      ${whereClause}
+      GROUP BY g.id, g.name
+      HAVING total > 0
+      ORDER BY total DESC, g.name ASC
+    `).all(...queryParams) as Array<{ id: number; name: string; total: number }>;
+
+    // Get qualities with counts (filtered if other filters are applied)
+    const qualities = this.db.prepare(`
+      SELECT q.id, q.name, COUNT(DISTINCT mq.movie_id) as total
+      FROM qualities q
+      JOIN movie_qualities mq ON q.id = mq.quality_id
+      JOIN movies m ON mq.movie_id = m.id
+      ${whereClause}
+      GROUP BY q.id, q.name
+      HAVING total > 0
+      ORDER BY total DESC, q.name ASC
+    `).all(...queryParams) as Array<{ id: number; name: string; total: number }>;
+
+    // Get directors with counts (filtered if other filters are applied)
+    const directors = this.db.prepare(`
+      SELECT d.id, d.name, COUNT(DISTINCT md.movie_id) as total
+      FROM directors d
+      JOIN movie_directors md ON d.id = md.director_id
+      JOIN movies m ON md.movie_id = m.id
+      ${whereClause}
+      GROUP BY d.id, d.name
+      HAVING total > 0
+      ORDER BY total DESC, d.name ASC
+    `).all(...queryParams) as Array<{ id: number; name: string; total: number }>;
+
+    // Get years with counts (filtered if other filters are applied)
+    const years = this.db.prepare(`
+      SELECT year, COUNT(*) as total
+      FROM movies m
+      ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')} AND year IS NOT NULL` : 'WHERE year IS NOT NULL'}
+      GROUP BY year
+      HAVING total > 0
+      ORDER BY year DESC
+    `).all(...queryParams) as Array<{ year: number; total: number }>;
+
+    // Get rating ranges with counts (filtered if other filters are applied)
+    const ratingRanges = this.db.prepare(`
+      SELECT 
+        CASE 
+          WHEN rating >= 9.0 THEN '9.0+ (Excellent)'
+          WHEN rating >= 8.0 THEN '8.0-8.9 (Very Good)'
+          WHEN rating >= 7.0 THEN '7.0-7.9 (Good)'
+          WHEN rating >= 6.0 THEN '6.0-6.9 (Fair)'
+          WHEN rating >= 5.0 THEN '5.0-5.9 (Below Average)'
+          ELSE 'Below 5.0 (Poor)'
+        END as range,
+        CASE 
+          WHEN rating >= 9.0 THEN 9.0
+          WHEN rating >= 8.0 THEN 8.0
+          WHEN rating >= 7.0 THEN 7.0
+          WHEN rating >= 6.0 THEN 6.0
+          WHEN rating >= 5.0 THEN 5.0
+          ELSE 0.0
+        END as min,
+        CASE 
+          WHEN rating >= 9.0 THEN 10.0
+          WHEN rating >= 8.0 THEN 8.9
+          WHEN rating >= 7.0 THEN 7.9
+          WHEN rating >= 6.0 THEN 6.9
+          WHEN rating >= 5.0 THEN 5.9
+          ELSE 4.9
+        END as max,
+        COUNT(*) as total
+      FROM movies m
+      ${whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')} AND rating IS NOT NULL` : 'WHERE rating IS NOT NULL'}
+      GROUP BY 
+        CASE 
+          WHEN rating >= 9.0 THEN '9.0+ (Excellent)'
+          WHEN rating >= 8.0 THEN '8.0-8.9 (Very Good)'
+          WHEN rating >= 7.0 THEN '7.0-7.9 (Good)'
+          WHEN rating >= 6.0 THEN '6.0-6.9 (Fair)'
+          WHEN rating >= 5.0 THEN '5.0-5.9 (Below Average)'
+          ELSE 'Below 5.0 (Poor)'
+        END
+      HAVING total > 0
+      ORDER BY min DESC
+    `).all(...queryParams) as Array<{ range: string; min: number; max: number; total: number }>;
+
+    // For filters that are already selected (not the last one), return only selected options
+    const result = {
+      genres: this.getFilterResult('genre', genres, selectedFilters),
+      qualities: this.getFilterResult('quality', qualities, selectedFilters),
+      directors: this.getFilterResult('director', directors, selectedFilters),
+      years: this.getFilterResult('year', years, selectedFilters),
+      rating_ranges: this.getFilterResult('rating_range', ratingRanges, selectedFilters)
+    };
+
+    return result;
+  }
+
+  private applyFilterCondition(
+    filter: { type: string; values: (string | number)[] },
+    whereConditions: string[],
+    queryParams: any[]
+  ): void {
+    switch (filter.type) {
+      case 'genre':
+        if (filter.values.length > 0) {
+          const placeholders = filter.values.map(() => '?').join(',');
+          whereConditions.push(`EXISTS (
+            SELECT 1 FROM movie_genres mg 
+            JOIN genres g ON mg.genre_id = g.id 
+            WHERE mg.movie_id = m.id AND g.name IN (${placeholders})
+          )`);
+          queryParams.push(...filter.values);
+        }
+        break;
+      case 'quality':
+        if (filter.values.length > 0) {
+          const placeholders = filter.values.map(() => '?').join(',');
+          whereConditions.push(`EXISTS (
+            SELECT 1 FROM movie_qualities mq 
+            JOIN qualities q ON mq.quality_id = q.id 
+            WHERE mq.movie_id = m.id AND q.name IN (${placeholders})
+          )`);
+          queryParams.push(...filter.values);
+        }
+        break;
+      case 'director':
+        if (filter.values.length > 0) {
+          const placeholders = filter.values.map(() => '?').join(',');
+          whereConditions.push(`EXISTS (
+            SELECT 1 FROM movie_directors md 
+            JOIN directors d ON md.director_id = d.id 
+            WHERE md.movie_id = m.id AND d.name IN (${placeholders})
+          )`);
+          queryParams.push(...filter.values);
+        }
+        break;
+      case 'year':
+        if (filter.values.length > 0) {
+          const placeholders = filter.values.map(() => '?').join(',');
+          whereConditions.push(`m.year IN (${placeholders})`);
+          queryParams.push(...filter.values);
+        }
+        break;
+      case 'rating_range':
+        if (filter.values.length > 0) {
+          const conditions = filter.values.map((range) => {
+            if (typeof range === 'string') {
+              if (range === '9.0+ (Excellent)') return 'm.rating >= 9.0';
+              if (range === '8.0-8.9 (Very Good)') return 'm.rating >= 8.0 AND m.rating < 9.0';
+              if (range === '7.0-7.9 (Good)') return 'm.rating >= 7.0 AND m.rating < 8.0';
+              if (range === '6.0-6.9 (Fair)') return 'm.rating >= 6.0 AND m.rating < 7.0';
+              if (range === '5.0-5.9 (Below Average)') return 'm.rating >= 5.0 AND m.rating < 6.0';
+              if (range === 'Below 5.0 (Poor)') return 'm.rating < 5.0';
+            }
+            return '1=1';
+          });
+          whereConditions.push(`(${conditions.join(' OR ')})`);
+        }
+        break;
+    }
+  }
+
+  private getFilterResult(
+    filterType: string,
+    allOptions: any[],
+    selectedFilters: Array<{ type: string; values: (string | number)[] }>
+  ): any[] {
+    // Find if this filter type is already selected (not the last one)
+    const selectedFilter = selectedFilters.find(f => f.type === filterType);
+    const isLastFilter = selectedFilters.length > 0 && 
+      selectedFilters[selectedFilters.length - 1].type === filterType;
+
+    if (selectedFilter && !isLastFilter) {
+      // Return only selected options for filters that are already applied
+      return allOptions.filter(option => 
+        selectedFilter.values.includes(option.name || option.year || option.range)
+      );
+    } else {
+      // Return all available options for the current filter
+      return allOptions;
+    }
+  }
 }

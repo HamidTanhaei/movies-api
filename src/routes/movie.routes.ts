@@ -6,6 +6,23 @@ const router = Router();
 
 const getMovieService = () => new MovieService();
 
+router.get('/filters', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const movieService = getMovieService();
+    
+    // Parse the selected filters from query parameters
+    const selectedFilters = req.query.filters ? JSON.parse(req.query.filters as string) : [];
+    
+    const filters = await movieService.getAvailableFilters(selectedFilters);
+    res.json({
+      success: true,
+      data: filters
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get('/', validateSearchParams, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const searchParams = {
