@@ -1,12 +1,12 @@
 {
-  "name": "tempapi",
+  "name": "movies api",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
+    "build": "npm run seed && tsc",
     "seed": "ts-node src/scripts/seed-data.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
