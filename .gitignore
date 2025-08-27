@@ -15,11 +15,6 @@ yarn-error.log*
 dist/
 build/
 
-# Database files
-data/*.db
-data/*.sqlite
-data/*.sqlite3
-
 # Logs
 logs/
 *.log
